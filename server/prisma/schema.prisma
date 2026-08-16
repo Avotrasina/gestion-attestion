@@ -1,0 +1,166 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+// ============================================================
+// PERSONNE
+// ============================================================
+
+model Personne {
+  id_personne Int    @id @default(autoincrement())
+  nom         String
+  prenom      String
+  email       String @unique
+  telephone   String
+  sexe        String
+
+  // Héritage
+  etudiant  Etudiant?
+  personnel Personnel?
+
+  // Une personne peut faire plusieurs demandes
+  demandes Demande[]
+
+  // Une personne appartient à une unité
+  id_unite Int?
+  unite    Unite? @relation(fields: [id_unite], references: [id_unite], onDelete: SetNull, onUpdate: Cascade)
+}
+
+
+// ============================================================
+// ETUDIANT
+// ============================================================
+
+model Etudiant {
+  // PK + FK vers Personne
+  id_personne Int @id
+
+  personne Personne @relation(fields: [id_personne], references: [id_personne], onDelete: Cascade, onUpdate: Cascade)
+
+  universite  String
+  annee_etude Int
+  filiere     String
+}
+
+
+// ============================================================
+// PERSONNEL
+// ============================================================
+
+model Personnel {
+  // PK + FK vers Personne
+  id_personne Int @id
+
+  personne Personne @relation(fields: [id_personne], references: [id_personne], onDelete: Cascade, onUpdate: Cascade)
+
+  matricule   String   @unique
+  date_entree DateTime
+  contrat     String
+  categorie   String
+
+  id_fonction Int
+
+  fonction Fonction @relation(fields: [id_fonction], references: [id_fonction], onDelete: Restrict, onUpdate: Cascade)
+}
+
+
+// ============================================================
+// FONCTION
+// ============================================================
+
+model Fonction {
+  id_fonction  Int    @id @default(autoincrement())
+  nom_fonction String
+
+  personnels Personnel[]
+}
+
+
+// ============================================================
+// UNITE
+// ============================================================
+
+model Unite {
+  id_unite Int @id @default(autoincrement())
+
+  // Une unité peut contenir plusieurs personnes
+  personnes Personne[]
+
+  // Héritage
+  agence    Agence?
+  direction Direction?
+}
+
+
+// ============================================================
+// AGENCE
+// ============================================================
+
+model Agence {
+  // PK + FK vers Unite
+  id_unite Int @id
+
+  unite Unite @relation(fields: [id_unite], references: [id_unite], onDelete: Cascade, onUpdate: Cascade)
+
+  code_agence String @unique
+  nom_agence  String
+}
+
+
+// ============================================================
+// DIRECTION
+// ============================================================
+
+model Direction {
+  // PK + FK vers Unite
+  id_unite Int @id
+
+  unite Unite @relation(fields: [id_unite], references: [id_unite], onDelete: Cascade, onUpdate: Cascade)
+
+  code_direction String @unique
+  nom_direction  String
+}
+
+
+// ============================================================
+// DEMANDE
+// ============================================================
+
+model Demande {
+  id_demande Int      @id @default(autoincrement())
+  date       DateTime
+  type       String
+  statut     String
+
+  // FK vers Personne
+  id_personne Int
+
+  personne Personne @relation(fields: [id_personne], references: [id_personne], onDelete: Restrict, onUpdate: Cascade)
+
+  // Une demande peut contenir plusieurs fichiers
+  fichiers Fichier[]
+}
+
+
+// ============================================================
+// FICHIER
+// ============================================================
+
+model Fichier {
+  id             Int      @id @default(autoincrement())
+  // ENTREE / GENERE
+  type_fichier   String
+  role           String
+  nom_fichier    String
+  date_insertion DateTime @default(now())
+
+  // FK vers Demande
+  id_demande Int
+
+  demande Demande @relation(fields: [id_demande], references: [id_demande], onDelete: Cascade, onUpdate: Cascade)
+}

@@ -1,2 +1,12 @@
 .env
 node_modules
+
+
+/generated/prisma
+/src/generated/prisma
+agents/
+claude/
+windsurf/
+
+src/db
+dev.db
