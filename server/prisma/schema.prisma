@@ -13,7 +13,7 @@ generator client {
 
 model Personne {
   id_personne Int    @id @default(autoincrement())
-  nom         String
+  nom         String 
   prenom      String
   email       String @unique
   telephone   String
@@ -85,45 +85,19 @@ model Fonction {
 // UNITE
 // ============================================================
 
+enum TypeUnite {
+  AGENCE
+  DIRECTION
+}
+
 model Unite {
   id_unite Int @id @default(autoincrement())
 
-  // Une unité peut contenir plusieurs personnes
+  code String @unique
+  nom  String
+  type TypeUnite
+
   personnes Personne[]
-
-  // Héritage
-  agence    Agence?
-  direction Direction?
-}
-
-
-// ============================================================
-// AGENCE
-// ============================================================
-
-model Agence {
-  // PK + FK vers Unite
-  id_unite Int @id
-
-  unite Unite @relation(fields: [id_unite], references: [id_unite], onDelete: Cascade, onUpdate: Cascade)
-
-  code_agence String @unique
-  nom_agence  String
-}
-
-
-// ============================================================
-// DIRECTION
-// ============================================================
-
-model Direction {
-  // PK + FK vers Unite
-  id_unite Int @id
-
-  unite Unite @relation(fields: [id_unite], references: [id_unite], onDelete: Cascade, onUpdate: Cascade)
-
-  code_direction String @unique
-  nom_direction  String
 }
 
 
