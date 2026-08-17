@@ -205,19 +205,7 @@ async function listerDemandesParStatut(req: Request, res: Response) {
 				message: "Le statut est requis",
 			});
 		}
-		const validStatuts = [
-			"enregistree",
-			"en_attente_de_recuperation",
-			"recuperee",
-		];
-		if (!validStatuts.includes(statut.toLowerCase())) {
-			return res.status(400).json({
-				success: false,
-				message:
-					"Le statut doit être l'un de: enregistree, en_attente_de_recuperation, recuperee",
-			});
-		}
-		const validStatuts = [
+			const validStatuts = [
 			"enregistree",
 			"en_attente_de_recuperation",
 			"recuperee",

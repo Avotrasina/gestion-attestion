@@ -129,7 +129,9 @@ model Fichier {
   id             Int      @id @default(autoincrement())
   // ENTREE / GENERE
   type_fichier   String
-  // DM / CV / LM / LI
+  // Ex : 2026/ID/SAP/DRH/CEM
+  reference String?
+  // DM / CV / LM / LI / ATTESTATION
   role           String
   nom_fichier    String
   date_insertion DateTime @default(now())
