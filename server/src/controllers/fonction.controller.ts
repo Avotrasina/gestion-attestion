@@ -13,7 +13,7 @@ async function obtenirFonctionParId(req: Request, res: Response) {
 			});
 		}
 		
-		const fonctionTrouvee = await fonctionService.obtenirFonction(+id);
+		const fonctionTrouvee = await fonctionService.obtenirFonction(Number(id));
 
 		res.status(200).json({
 			success: true,
