@@ -6,6 +6,40 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ============================================================
+// AUTHENTIFICATION ET AUDIT
+// ============================================================
+
+model User {
+  id        Int         @id @default(autoincrement())
+  email     String      @unique
+  mdp       String
+  nom       String
+  prenom    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  auditLogs AuditLog[]
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  action     String
+  method     String
+  path       String
+  statusCode Int
+  entity     String?
+  entityId   String?
+  ipAddress  String?
+  details    String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+}
 
 // ============================================================
 // PERSONNE
@@ -105,11 +139,18 @@ model Unite {
 // DEMANDE
 // ============================================================
 
+enum TypeDemande {
+  STAGE
+  ATTESTATION_TRAVAIL
+  ATTESTATION_STAGE
+}
+
 model Demande {
   id_demande Int      @id @default(autoincrement())
   date       DateTime
-  type       String
+  type       TypeDemande
   statut     String
+  remarque   String? 
 
   // FK vers Personne
   id_personne Int
@@ -131,7 +172,7 @@ model Fichier {
   type_fichier   String
   // Ex : 2026/ID/SAP/DRH/CEM
   reference String?
-  // DM / CV / LM / LI / ATTESTATION
+  // DM / CV / LM / LI / ASS / ATTESTATION
   role           String
   nom_fichier    String
   date_insertion DateTime @default(now())

@@ -48,7 +48,7 @@ async function listerDemandes(req: Request, res: Response) {
 // Ajouter une nouvelle demande
 async function ajouterDemande(req: Request, res: Response) {
 	try {
-		const { date, type, statut, id_personne } = req.body;
+		const { date, type, remarque, id_personne } = req.body;		
 
 		if (!date) {
 			return res.status(400).json({
@@ -64,13 +64,6 @@ async function ajouterDemande(req: Request, res: Response) {
 			});
 		}
 
-		if (!statut) {
-			return res.status(400).json({
-				success: false,
-				message: "Le statut est requis",
-			});
-		}
-
 		if (!id_personne) {
 			return res.status(400).json({
 				success: false,
@@ -78,10 +71,13 @@ async function ajouterDemande(req: Request, res: Response) {
 			});
 		}
 
+		// Par défaut le statut de la demande est : ENREGISTREE
+		const statut = "ENREGISTREE";
 		const demande = await demandeService.creerDemande({
 			date,
 			type,
 			statut,
+			remarque,
 			id_personne,
 		});
 
@@ -129,7 +125,7 @@ async function supprimerDemande(req: Request, res: Response) {
 async function modifierDemande(req: Request, res: Response) {
 	try {
 		const { id } = req.params;
-		const { date, type, statut, id_personne } = req.body;
+		const { date, type, statut, remarque, id_personne } = req.body;
 
 		if (!id) {
 			return res.status(400).json({
@@ -138,7 +134,13 @@ async function modifierDemande(req: Request, res: Response) {
 			});
 		}
 
-		if (!date && !type && !statut && !id_personne) {
+		if (
+			date === undefined &&
+			type === undefined &&
+			statut === undefined &&
+			remarque === undefined &&
+			id_personne === undefined
+		) {
 			return res.status(400).json({
 				success: false,
 				message: "Au moins un champ à modifier est requis",
@@ -149,6 +151,7 @@ async function modifierDemande(req: Request, res: Response) {
 			date,
 			type,
 			statut,
+			remarque,
 			id_personne,
 		});
 
@@ -205,7 +208,7 @@ async function listerDemandesParStatut(req: Request, res: Response) {
 				message: "Le statut est requis",
 			});
 		}
-			const validStatuts = [
+		const validStatuts = [
 			"enregistree",
 			"en_attente_de_recuperation",
 			"recuperee",

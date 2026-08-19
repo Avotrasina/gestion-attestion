@@ -12,6 +12,41 @@ function generateReference(
 	return `${year}/${paddedId}/SAP/DRH/CEM`;
 }
 
+function validateFileRoleForDemande(
+	demandeType: string,
+	typeFichier: "ENTREE" | "GENERE",
+	role: string,
+) {
+	const normalizedDemandeType = demandeType.trim().toUpperCase();
+	const normalizedRole = role.trim().toUpperCase();
+
+	if (typeFichier === "ENTREE") {
+		const allowedRolesByDemande: Record<string, string[]> = {
+			STAGE: ["LM", "CV", "ASS"],
+			ATTESTATION_STAGE: ["DM"],
+			ATTESTATION_TRAVAIL: ["DM"],
+		};
+
+		const allowedRoles = allowedRolesByDemande[normalizedDemandeType];
+		if (!allowedRoles) {
+			throw new Error(
+				`Type de demande non pris en charge: ${normalizedDemandeType}`,
+			);
+		}
+
+		if (!allowedRoles.includes(normalizedRole)) {
+			throw new Error(
+				`Pour une demande ${normalizedDemandeType}, le rôle doit être: ${allowedRoles.join(", ")}`,
+			);
+		}
+		return;
+	}
+
+	if (normalizedRole !== "ATTESTATION") {
+		throw new Error("Pour GENERE, le rôle doit être ATTESTATION");
+	}
+}
+
 // Lister tous les fichiers
 export async function listerFichiers() {
 	try {
@@ -59,18 +94,6 @@ export async function creerFichier(data: {
 			throw new Error("Le rôle est requis");
 		}
 
-		// Validate role based on type
-		if (data.type_fichier === "ENTREE") {
-			const validEntreeRoles = ["DM", "CV", "LM", "LI"];
-			if (!validEntreeRoles.includes(data.role.toUpperCase())) {
-				throw new Error("Pour ENTREE, le rôle doit être: DM, CV, LM ou LI");
-			}
-		} else if (data.type_fichier === "GENERE") {
-			if (data.role.toUpperCase() !== "ATTESTATION") {
-				throw new Error("Pour GENERE, le rôle doit être ATTESTATION");
-			}
-		}
-
 		if (!data.nom_fichier || data.nom_fichier.trim() === "") {
 			throw new Error("Le nom du fichier est requis");
 		}
@@ -87,6 +110,8 @@ export async function creerFichier(data: {
 		if (!demande) {
 			throw new Error(`Demande avec l'ID ${data.id_demande} non trouvée`);
 		}
+
+		validateFileRoleForDemande(demande.type, data.type_fichier, data.role);
 
 		// Generate reference for GENERE files
 		const reference =
@@ -195,10 +220,24 @@ export async function modifierFichier(
 			throw new Error("Le nom du fichier ne peut pas être vide");
 		}
 
+		const demande = await prisma.demande.findUnique({
+			where: { id_demande: fichier.id_demande },
+		});
+
+		if (!demande) {
+			throw new Error(`Demande avec l'ID ${fichier.id_demande} non trouvée`);
+		}
+
 		const updateData: any = {};
 		if (data.type_fichier) updateData.type_fichier = data.type_fichier;
 		if (data.role) updateData.role = data.role.toUpperCase();
 		if (data.nom_fichier) updateData.nom_fichier = data.nom_fichier;
+
+		const finalTypeFichier = (data.type_fichier ?? fichier.type_fichier) as
+			| "ENTREE"
+			| "GENERE";
+		const finalRole = (data.role ?? fichier.role).trim().toUpperCase();
+		validateFileRoleForDemande(demande.type, finalTypeFichier, finalRole);
 
 		const fichierModifie = await prisma.fichier.update({
 			where: { id },

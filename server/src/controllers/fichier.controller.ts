@@ -81,11 +81,11 @@ async function ajouterFichier(req: Request, res: Response) {
 
 		// Validate role based on type
 		if (type_fichier === "ENTREE") {
-			const validEntreeRoles = ["DM", "CV", "LM", "LI"];
+			const validEntreeRoles = ["DM", "CV", "LM", "LI", "ASS"];
 			if (!validEntreeRoles.includes(role.toUpperCase())) {
 				return res.status(400).json({
 					success: false,
-					message: "Pour ENTREE, le rôle doit être: DM, CV, LM ou LI",
+					message: "Pour ENTREE, le rôle doit être: DM, CV, LM, LI ou ASS",
 				});
 			}
 		} else if (type_fichier === "GENERE") {

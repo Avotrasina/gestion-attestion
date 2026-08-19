@@ -1,3 +1,4 @@
+import { TypeDemande } from "@prisma/client";
 import prisma from "../utils/client";
 
 // Lister toutes les demandes
@@ -9,6 +10,7 @@ export async function listerDemandes() {
 				date: true,
 				type: true,
 				statut: true,
+				remarque: true,
 				id_personne: true,
 				personne: {
 					select: {
@@ -41,6 +43,7 @@ export async function creerDemande(data: {
 	date: string;
 	type: string;
 	statut: string;
+	remarque?: string | null;
 	id_personne: number;
 }) {
 	try {
@@ -52,16 +55,23 @@ export async function creerDemande(data: {
 			throw new Error("Le type est requis");
 		}
 
+		const validTypes = ["STAGE", "ATTESTATION_STAGE", "ATTESTATION_TRAVAIL"];
+		if (!validTypes.includes(data.type.toUpperCase())) {
+			throw new Error(
+				"Le type doit être: STAGE, ATTESTATION_STAGE ou ATTESTATION_TRAVAIL",
+			);
+		}
+
 		if (!data.statut || data.statut.trim() === "") {
 			throw new Error("Le statut est requis");
 		}
 
 		const validStatuts = [
-			"enregistree",
-			"en_attente_de_recuperation",
-			"recuperee",
+			"ENREGISTREE",
+			"EN_ATTENTE_DE_RECUPERATION",
+			"RECUPEREE",
 		];
-		if (!validStatuts.includes(data.statut.toLowerCase())) {
+		if (!validStatuts.includes(data.statut.toUpperCase())) {
 			throw new Error(
 				"Le statut doit être l'un de: enregistree, en_attente_de_recuperation, recuperee",
 			);
@@ -71,7 +81,7 @@ export async function creerDemande(data: {
 			throw new Error("L'ID de la personne est requis");
 		}
 
-		// Vérifier que la personne existe
+		// Vérifier que la personne existe dans la base de données
 		const personne = await prisma.personne.findUnique({
 			where: { id_personne: data.id_personne },
 		});
@@ -80,11 +90,14 @@ export async function creerDemande(data: {
 			throw new Error(`Personne avec l'ID ${data.id_personne} non trouvée`);
 		}
 
+		const remarque = data.remarque?.trim();
+
 		const demande = await prisma.demande.create({
 			data: {
 				date: new Date(data.date),
-				type: data.type,
+				type: data.type.toUpperCase() as TypeDemande,
 				statut: data.statut,
+				remarque: remarque ? remarque : null,
 				id_personne: data.id_personne,
 			},
 			select: {
@@ -92,6 +105,7 @@ export async function creerDemande(data: {
 				date: true,
 				type: true,
 				statut: true,
+				remarque: true,
 				id_personne: true,
 				personne: {
 					select: {
@@ -131,6 +145,7 @@ export async function obtenirDemande(id_demande: number) {
 				date: true,
 				type: true,
 				statut: true,
+				remarque: true,
 				id_personne: true,
 				personne: {
 					select: {
@@ -170,6 +185,7 @@ export async function modifierDemande(
 		date?: string;
 		type?: string;
 		statut?: string;
+		remarque?: string | null;
 		id_personne?: number;
 	},
 ) {
@@ -180,6 +196,15 @@ export async function modifierDemande(
 
 		if (data.type !== undefined && data.type.trim() === "") {
 			throw new Error("Le type ne peut pas être vide");
+		}
+
+		if (data.type !== undefined) {
+			const validTypes = ["STAGE", "ATTESTATION_STAGE", "ATTESTATION_TRAVAIL"];
+			if (!validTypes.includes(data.type.toUpperCase())) {
+				throw new Error(
+					"Le type doit être: STAGE, ATTESTATION_STAGE ou ATTESTATION_TRAVAIL",
+				);
+			}
 		}
 
 		if (data.statut !== undefined && data.statut.trim() === "") {
@@ -225,8 +250,13 @@ export async function modifierDemande(
 
 		const updateData: any = {};
 		if (data.date !== undefined) updateData.date = new Date(data.date);
-		if (data.type !== undefined) updateData.type = data.type;
+		if (data.type !== undefined)
+			updateData.type = data.type.toUpperCase() as TypeDemande;
 		if (data.statut !== undefined) updateData.statut = data.statut;
+		if (data.remarque !== undefined) {
+			const remarque = data.remarque?.trim();
+			updateData.remarque = remarque === "" ? null : (remarque ?? null);
+		}
 		if (data.id_personne !== undefined)
 			updateData.id_personne = data.id_personne;
 
@@ -238,6 +268,7 @@ export async function modifierDemande(
 				date: true,
 				type: true,
 				statut: true,
+				remarque: true,
 				id_personne: true,
 				personne: {
 					select: {
@@ -311,6 +342,7 @@ export async function listerDemandesParPersonne(id_personne: number) {
 				date: true,
 				type: true,
 				statut: true,
+				remarque: true,
 				id_personne: true,
 				personne: {
 					select: {
@@ -364,6 +396,7 @@ export async function listerDemandesParStatut(statut: string) {
 				date: true,
 				type: true,
 				statut: true,
+				remarque: true,
 				id_personne: true,
 				personne: {
 					select: {
