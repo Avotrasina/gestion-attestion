@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demande d'attestation — CEM Gestion des attestations</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cem: { red: '#E30613', dark: '#2D2D2D', light: '#F6F6F8' }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .champ {
+      width: 100%;
+      padding: 0.625rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #d1d5db;
+      font-size: 0.875rem;
+      background: #fff;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .champ:focus {
+      border-color: #E30613;
+      box-shadow: 0 0 0 2px rgba(227, 6, 19, .25);
+    }
+    .upload-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      transition: border-color .15s, background .15s;
+    }
+    .carte-type {
+      border: 2px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all .15s;
+      background: #fff;
+    }
+    .carte-type.actif {
+      border-color: #E30613;
+      background: #fef2f2;
+      box-shadow: 0 0 0 2px rgba(227, 6, 19, .15);
+    }
+  </style>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/commun.js"></script>
+</head>
+<body>
+
+  <div id="contenu" class="p-4 md:p-6">
+
+    <div class="max-w-3xl mx-auto space-y-5">
+
+      <!-- En-tête -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-cem-dark">Nouvelle demande d'attestation</h2>
+        <p class="text-sm text-gray-500 mt-1">
+          Une seule pièce est requise : la <strong>demande manuscrite scannée</strong>.
+        </p>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-amber-100 px-2.5 py-1 rounded-full">Demande manuscrite scannée (DM)</span>
+        </div>
+      </div>
+
+      <!-- Progression -->
+      <div id="zone-progression" class="hidden bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+        <h3 class="text-sm font-bold text-cem-dark uppercase tracking-wide mb-4">Enregistrement en cours</h3>
+        <ul id="liste-progression" class="space-y-3 text-sm"></ul>
+      </div>
+
+      <form id="form-attestation" class="space-y-5" novalidate>
+
+        <!-- Section 0 : Type d'attestation -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h3 class="text-sm font-bold text-cem-dark uppercase tracking-wide mb-4">Type d'attestation</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <button type="button" id="carte-stage" class="carte-type actif">
+              <p class="font-semibold text-cem-dark">Attestation de stage</p>
+              <p class="text-xs text-gray-500 mt-1">Pour un étudiant ayant effectué un stage</p>
+            </button>
+            <button type="button" id="carte-travail" class="carte-type">
+              <p class="font-semibold text-cem-dark">Attestation de travail</p>
+              <p class="text-xs text-gray-500 mt-1">Pour un personnel de la CEM</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Section 1 : Personne -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h3 class="text-sm font-bold text-cem-dark uppercase tracking-wide mb-4">2. Personne concernée</h3>
+
+          <div class="mb-4">
+            <label for="select-personne" class="block text-sm font-semibold text-gray-700 mb-1.5">Personne</label>
+            <select id="select-personne" class="champ">
+              <option value="nouveau">➕ Créer une nouvelle personne</option>
+            </select>
+            <p class="text-[11px] text-gray-400 mt-1" id="aide-select">Sélectionnez un étudiant, ou créez un nouveau profil.</p>
+          </div>
+
+          <div id="zone-nouvelle-personne" class="space-y-4 border-t border-gray-100 pt-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="nom" class="block text-sm font-semibold text-gray-700 mb-1.5">Nom *</label>
+                <input type="text" id="nom" placeholder="Rakoto" class="champ">
+              </div>
+              <div>
+                <label for="prenom" class="block text-sm font-semibold text-gray-700 mb-1.5">Prénom *</label>
+                <input type="text" id="prenom" placeholder="Hery" class="champ">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="email" class="block text-sm font-semibold text-gray-700 mb-1.5">E-mail *</label>
+                <input type="email" id="email" placeholder="hery.rakoto@cem.mg" class="champ">
+              </div>
+              <div>
+                <label for="telephone" class="block text-sm font-semibold text-gray-700 mb-1.5">Téléphone * (10 chiffres)</label>
+                <input type="tel" id="telephone" placeholder="0321234567" maxlength="10" class="champ">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="sexe" class="block text-sm font-semibold text-gray-700 mb-1.5">Sexe *</label>
+                <select id="sexe" class="champ">
+                  <option value="H">Masculin</option>
+                  <option value="F">Féminin</option>
+                </select>
+              </div>
+              <div>
+                <label for="id_unite" class="block text-sm font-semibold text-gray-700 mb-1.5">Unité / Agence</label>
+                <select id="id_unite" class="champ"><option value="">— Sélectionner —</option></select>
+              </div>
+            </div>
+
+            <!-- Champs étudiant -->
+            <div id="champs-etudiant" class="grid grid-cols-3 gap-4">
+              <div class="col-span-3 md:col-span-1">
+                <label for="universite" class="block text-sm font-semibold text-gray-700 mb-1.5">Université *</label>
+                <input type="text" id="universite" placeholder="Université d'Antananarivo" class="champ">
+              </div>
+              <div class="col-span-3 md:col-span-1">
+                <label for="annee_etude" class="block text-sm font-semibold text-gray-700 mb-1.5">Année d'étude *</label>
+                <input type="number" id="annee_etude" min="1" max="10" placeholder="3" class="champ">
+              </div>
+              <div class="col-span-3 md:col-span-1">
+                <label for="filiere" class="block text-sm font-semibold text-gray-700 mb-1.5">Filière *</label>
+                <input type="text" id="filiere" placeholder="Informatique" class="champ">
+              </div>
+            </div>
+
+            <!-- Champs personnel -->
+            <div id="champs-personnel" class="hidden grid grid-cols-2 gap-4">
+              <div>
+                <label for="matricule" class="block text-sm font-semibold text-gray-700 mb-1.5">Matricule *</label>
+                <input type="text" id="matricule" placeholder="CEM-2024-001" class="champ">
+              </div>
+              <div>
+                <label for="date_entree" class="block text-sm font-semibold text-gray-700 mb-1.5">Date d'entrée *</label>
+                <input type="date" id="date_entree" class="champ">
+              </div>
+              <div>
+                <label for="contrat" class="block text-sm font-semibold text-gray-700 mb-1.5">Type de contrat *</label>
+                <select id="contrat" class="champ">
+                  <option value="">— Choisir —</option>
+                  <option value="CDI">CDI</option>
+                  <option value="CDD">CDD</option>
+                  <option value="Stage">Stage</option>
+                  <option value="Consultant">Consultant / Prestataire</option>
+                  <option value="Autre">Autre</option>
+                </select>
+              </div>
+              <div>
+                <label for="categorie" class="block text-sm font-semibold text-gray-700 mb-1.5">Catégorie *</label>
+                <input type="text" id="categorie" placeholder="A, B, C…" class="champ">
+              </div>
+              <div class="col-span-2">
+                <label for="id_fonction" class="block text-sm font-semibold text-gray-700 mb-1.5">Fonction *</label>
+                <select id="id_fonction" class="champ"><option value="">— Sélectionner —</option></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2 : Demande -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h3 class="text-sm font-bold text-cem-dark uppercase tracking-wide mb-4">3. Demande</h3>
+          <div class="max-w-xs">
+            <label for="date" class="block text-sm font-semibold text-gray-700 mb-1.5">Date de la demande *</label>
+            <input type="date" id="date" class="champ">
+          </div>
+        </div>
+
+        <!-- Section 3 : Pièce jointe -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <h3 class="text-sm font-bold text-cem-dark uppercase tracking-wide mb-1">4. Pièce jointe</h3>
+          <p class="text-xs text-gray-500 mb-4">La demande manuscrite scannée est obligatoire. Formats acceptés : PDF, JPEG, PNG, DOC, DOCX — 10 Mo maximum.</p>
+          <div class="upload-card" data-role="DM">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <p class="text-sm font-semibold text-cem-dark">Demande manuscrite scannée *</p>
+                <p class="text-xs text-gray-400">Lettre manuscrite signée, scannée en PDF ou image</p>
+              </div>
+              <label class="cursor-pointer inline-flex items-center gap-2 text-sm font-semibold text-cem-red border border-cem-red rounded-lg px-4 py-2 hover:bg-red-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                Choisir
+                <input type="file" class="hidden" accept="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+              </label>
+            </div>
+            <p class="fichier-nom text-xs text-gray-500 mt-2"></p>
+          </div>
+        </div>
+
+        <p id="msg-erreur" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3"></p>
+
+        <div class="flex items-center justify-end gap-3">
+          <a href="demandes.html" class="px-5 py-2.5 rounded-lg border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-50">Annuler</a>
+          <button type="submit" id="btn-submit"
+                  class="px-6 py-2.5 rounded-lg bg-cem-red hover:bg-red-700 text-white text-sm font-semibold transition-colors shadow-sm">
+            Enregistrer la demande d'attestation
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    authRequireAuth();
+    initLayout({
+      active: "demande-attestation",
+      titre: "Demande d'attestation",
+      sousTitre: "Enregistrer une demande d'attestation de stage ou de travail",
+    });
+
+    let typeAttestation = "attestation_stage"; // ou "attestation_travail"
+    let personnes = [];
+    let unites = [];
+    let fonctions = [];
+    let idPersonneChoisie = null;
+    let fichierDM = null;
+
+    async function chargerReferences() {
+      const [resUnites, resFonctions] = await Promise.all([
+        apiGet("/unites"),
+        apiGet("/fonctions"),
+      ]);
+      unites = resUnites.data || [];
+      fonctions = resFonctions.data || [];
+
+      const uniteSelect = document.getElementById("id_unite");
+      unites.forEach((u) => {
+        const opt = document.createElement("option");
+        opt.value = u.id_unite;
+        opt.textContent = u.nom + " (" + u.code + ")";
+        uniteSelect.appendChild(opt);
+      });
+
+      const fonctionSelect = document.getElementById("id_fonction");
+      fonctions.forEach((f) => {
+        const opt = document.createElement("option");
+        opt.value = f.id_fonction;
+        opt.textContent = f.nom_fonction;
+        fonctionSelect.appendChild(opt);
+      });
+
+      await chargerPersonnes();
+    }
+
+    async function chargerPersonnes() {
+      const type = typeAttestation === "attestation_stage" ? "ETUDIANT" : "PERSONNEL";
+      const res = await apiGet("/personnes/type?type=" + type);
+      personnes = res.data || [];
+
+      const select = document.getElementById("select-personne");
+      const valeurCourante = select.value;
+      select.innerHTML = `<option value="nouveau">➕ Créer une nouvelle personne</option>`;
+      personnes.forEach((p) => {
+        const opt = document.createElement("option");
+        opt.value = p.id_personne;
+        let detail = "";
+        if (type === "ETUDIANT" && p.etudiant) {
+          detail = " — " + p.etudiant.filiere + " (" + p.etudiant.universite + ")";
+        } else if (type === "PERSONNEL" && p.personnel) {
+          detail = " — " + (p.personnel.fonction ? p.personnel.fonction.nom_fonction : "Personnel") +
+            (p.personnel.matricule ? " · " + p.personnel.matricule : "");
+        }
+        opt.textContent = nomComplet(p) + detail;
+        select.appendChild(opt);
+      });
+      if (valeurCourante && [...select.options].some((o) => o.value === valeurCourante)) {
+        select.value = valeurCourante;
+      }
+      idPersonneChoisie = select.value === "nouveau" ? null : Number(select.value);
+    }
+
+    function basculerType(type) {
+      typeAttestation = type;
+      const stage = type === "attestation_stage";
+      document.getElementById("carte-stage").classList.toggle("actif", stage);
+      document.getElementById("carte-travail").classList.toggle("actif", !stage);
+      document.getElementById("champs-etudiant").classList.toggle("hidden", !stage);
+      document.getElementById("champs-personnel").classList.toggle("hidden", stage);
+      document.getElementById("champs-personnel").classList.toggle("grid", !stage);
+      document.getElementById("aide-select").textContent = stage
+        ? "Sélectionnez un étudiant, ou créez un nouveau profil."
+        : "Sélectionnez un personnel, ou créez un nouveau profil.";
+      chargerPersonnes().catch((err) => showToast(err.message, "error"));
+    }
+
+    document.getElementById("carte-stage").addEventListener("click", () => basculerType("attestation_stage"));
+    document.getElementById("carte-travail").addEventListener("click", () => basculerType("attestation_travail"));
+
+    document.getElementById("select-personne").addEventListener("change", (e) => {
+      const nouveau = e.target.value === "nouveau";
+      document.getElementById("zone-nouvelle-personne").classList.toggle("hidden", !nouveau);
+      idPersonneChoisie = nouveau ? null : Number(e.target.value);
+    });
+
+    // Upload DM
+    document.querySelector(".upload-card[data-role='DM'] input[type='file']").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      const el = document.querySelector(".upload-card[data-role='DM'] .fichier-nom");
+      if (!file) return;
+      if (file.size > UPLOAD_MAX_SIZE_MO * 1024 * 1024) {
+        showToast("Fichier trop volumineux (max " + UPLOAD_MAX_SIZE_MO + " Mo).", "error");
+        e.target.value = "";
+        el.textContent = "";
+        fichierDM = null;
+        return;
+      }
+      fichierDM = file;
+      el.textContent = "✓ " + file.name + " (" + (file.size / 1024).toFixed(0) + " Ko)";
+      el.classList.add("text-emerald-600", "font-semibold");
+    });
+
+    // Progression
+    function ajouterEtape(texte, etat) {
+      const li = document.createElement("li");
+      li.className = "flex items-center gap-3";
+      if (etat === "fait") {
+        li.innerHTML = `<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span><span>${escapeHtml(texte)}</span>`;
+      } else if (etat === "erreur") {
+        li.innerHTML = `<span class="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs font-bold">✕</span><span class="text-red-600">${escapeHtml(texte)}</span>`;
+      } else {
+        li.innerHTML = `<span class="w-6 h-6 rounded-full bg-cem-red text-white flex items-center justify-center"><span class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span></span><span>${escapeHtml(texte)}</span>`;
+      }
+      document.getElementById("liste-progression").appendChild(li);
+    }
+
+    function marquerDerniereEtapeFait() {
+      const liste = document.getElementById("liste-progression").querySelectorAll("li");
+      const dernier = liste[liste.length - 1];
+      if (dernier) dernier.innerHTML = `<span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">✓</span><span>${dernier.textContent}</span>`;
+    }
+
+    document.getElementById("form-attestation").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("msg-erreur");
+      msg.classList.add("hidden");
+
+      function montrerErreur(txt) {
+        msg.textContent = txt;
+        msg.classList.remove("hidden");
+      }
+
+      const date = document.getElementById("date").value;
+      if (!date) return montrerErreur("La date de la demande est requise.");
+
+      if (!idPersonneChoisie) {
+        const champsCommuns = ["nom", "prenom", "email", "telephone"];
+        for (const id of champsCommuns) {
+          if (!document.getElementById(id).value.trim()) {
+            return montrerErreur("Veuillez renseigner tous les champs de la nouvelle personne.");
+          }
+        }
+        if (!telephoneValide(document.getElementById("telephone").value)) {
+          return montrerErreur("Le téléphone doit contenir exactement 10 chiffres.");
+        }
+        if (typeAttestation === "attestation_stage") {
+          for (const id of ["universite", "annee_etude", "filiere"]) {
+            if (!document.getElementById(id).value.trim()) {
+              return montrerErreur("Veuillez renseigner les informations de l'étudiant (université, année, filière).");
+            }
+          }
+        } else {
+          for (const id of ["matricule", "date_entree", "contrat", "categorie"]) {
+            if (!document.getElementById(id).value.trim()) {
+              return montrerErreur("Veuillez renseigner les informations du personnel (matricule, date d'entrée, contrat, catégorie).");
+            }
+          }
+          if (!document.getElementById("id_fonction").value) {
+            return montrerErreur("Veuillez sélectionner la fonction du personnel.");
+          }
+        }
+      }
+
+      if (!fichierDM) {
+        return montrerErreur("Le fichier « Demande manuscrite scannée » est obligatoire.");
+      }
+
+      // ---- Soumission ----
+      const btn = document.getElementById("btn-submit");
+      btn.disabled = true;
+      btn.textContent = "Enregistrement…";
+      document.getElementById("zone-progression").classList.remove("hidden");
+      document.getElementById("liste-progression").innerHTML = "";
+
+      try {
+        // 1. Personne
+        let idPersonne = idPersonneChoisie;
+        if (!idPersonne) {
+          ajouterEtape("Création de la personne…");
+          const payload = {
+            nom: document.getElementById("nom").value.trim(),
+            prenom: document.getElementById("prenom").value.trim(),
+            email: document.getElementById("email").value.trim(),
+            telephone: document.getElementById("telephone").value.trim(),
+            sexe: document.getElementById("sexe").value,
+            id_unite: document.getElementById("id_unite").value ? Number(document.getElementById("id_unite").value) : null,
+          };
+          if (typeAttestation === "attestation_stage") {
+            payload.type = "ETUDIANT";
+            payload.etudiant = {
+              universite: document.getElementById("universite").value.trim(),
+              annee_etude: Number(document.getElementById("annee_etude").value),
+              filiere: document.getElementById("filiere").value.trim(),
+            };
+          } else {
+            payload.type = "PERSONNEL";
+            payload.personnel = {
+              matricule: document.getElementById("matricule").value.trim(),
+              date_entree: document.getElementById("date_entree").value,
+              contrat: document.getElementById("contrat").value,
+              categorie: document.getElementById("categorie").value.trim(),
+              id_fonction: Number(document.getElementById("id_fonction").value),
+            };
+          }
+          const personne = await apiCreerPersonne(payload);
+          idPersonne = personne.id_personne;
+          marquerDerniereEtapeFait();
+        }
+
+        // 2. Demande
+        ajouterEtape("Création de la demande d'attestation…");
+        const demande = await apiCreerDemande({
+          date,
+          type: typeAttestation,
+          statut: "enregistree",
+          id_personne: idPersonne,
+        });
+        marquerDerniereEtapeFait();
+
+        // 3. Fichier DM
+        ajouterEtape("Téléversement : demande manuscrite scannée…");
+        await apiUploadFichier({
+          file: fichierDM,
+          id_demande: demande.id_demande,
+          role: "DM",
+          type_fichier: "ENTREE",
+        });
+        marquerDerniereEtapeFait();
+
+        showToast("Demande d'attestation #" + demande.id_demande + " enregistrée avec succès.", "success");
+        setTimeout(() => (window.location.href = "demandes.html"), 1200);
+      } catch (err) {
+        ajouterEtape("Échec : " + err.message, "erreur");
+        showToast(err.message, "error");
+        btn.disabled = false;
+        btn.textContent = "Enregistrer la demande d'attestation";
+      }
+    });
+
+    document.getElementById("date").value = todayIso();
+    chargerReferences().catch((err) => showToast(err.message, "error"));
+  </script>
+</body>
+</html>

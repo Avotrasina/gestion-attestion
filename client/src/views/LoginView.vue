@@ -23,7 +23,12 @@
 			</div>
 
 			<!-- Formulaire -->
-			<form id="form-login" class="p-8 space-y-5" novalidate>
+			<form
+				@submit.prevent="seConnecter"
+				id="form-login"
+				class="p-8 space-y-5"
+				novalidate
+			>
 				<div>
 					<label
 						for="email"
@@ -31,6 +36,9 @@
 						>Adresse e-mail</label
 					>
 					<input
+						v-model="userForm.email"
+						:aria-invalid="hasError"
+						:class="{ 'border-red-500': hasError }"
 						type="email"
 						id="email"
 						name="email"
@@ -50,6 +58,9 @@
 						>
 					</div>
 					<input
+						v-model="userForm.mdp"
+						:aria-invalid="hasError"
+						:class="{ 'border-red-500': hasError }"
 						type="password"
 						id="password"
 						name="password"
@@ -63,20 +74,24 @@
 				<p
 					v-if="hasError"
 					id="msg-erreur"
-					class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
-				></p>
+					role="alert"
+					class="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+				>
+					{{ error_msg }}
+				</p>
 
 				<button
 					type="submit"
-					class="w-full bg-cem-red hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm"
+					:disabled="isSubmitting"
+					class="w-full bg-cem-red hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors shadow-sm"
 				>
-					Se connecter
+					{{ isSubmitting ? "Connexion..." : "Se connecter" }}
 				</button>
 
 				<p class="text-center text-sm text-gray-600">
 					Pas encore de compte ?
 					<RouterLink
-						:to="{name: 'register'}"
+						:to="{ name: 'register' }"
 						href="register.html"
 						class="font-semibold text-cem-red hover:underline"
 					>
@@ -120,7 +135,82 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import axios, { isAxiosError } from "axios";
 import logo from "@/assets/logo.jpg";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
+const authStore = useAuthStore();
+const router = useRouter();
+const API_URL_BASE = import.meta.env.VITE_API_URL_BASE?.replace(/\/$/, "");
 const hasError = ref<boolean>(false);
+const error_msg = ref<string>("");
+const isSubmitting = ref<boolean>(false);
+
+const userForm = ref({ email: "", mdp: "" });
+
+function validateForm() {
+	const email = userForm.value.email.trim();
+	if (!email) {
+		error_msg.value = "Veuillez renseigner votre adresse e-mail.";
+		return false;
+	}
+
+	if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+		error_msg.value = "Veuillez renseigner une adresse e-mail valide.";
+		return false;
+	}
+
+	if (!userForm.value.mdp) {
+		error_msg.value = "Veuillez renseigner votre mot de passe.";
+		return false;
+	}
+
+	if (userForm.value.mdp.length < 8) {
+		error_msg.value = "Le mot de passe doit contenir au moins 8 caractères.";
+		return false;
+	}
+
+	return true;
+}
+
+async function seConnecter() {
+	hasError.value = false;
+	error_msg.value = "";
+
+	if (!validateForm()) {
+		hasError.value = true;
+		return;
+	}
+
+	if (!API_URL_BASE) {
+		hasError.value = true;
+		error_msg.value = "Le service de connexion n'est pas configuré.";
+		return;
+	}
+
+	isSubmitting.value = true;
+	try {
+		const res = await axios.post(`${API_URL_BASE}/auth/login`, {
+			email: userForm.value.email.trim().toLowerCase(),
+			mdp: userForm.value.mdp,
+		});
+		const { user, token } = res.data.data ?? {};
+
+		if (!user || !token) {
+			throw new Error("Réponse de connexion invalide");
+		}
+
+		authStore.login(user, token);
+		await router.push({ name: "home" });
+	} catch (error: unknown) {
+		hasError.value = true;
+		error_msg.value = isAxiosError(error)
+			? (error.response?.data?.message ??
+				"Impossible de contacter le service de connexion.")
+			: "Une erreur est survenue pendant la connexion. Veuillez réessayer.";
+	} finally {
+		isSubmitting.value = false;
+	}
+}
 </script>

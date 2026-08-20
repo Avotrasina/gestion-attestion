@@ -9,7 +9,7 @@ interface User {
   role: string
 }
 
-export const userAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null as User | null,
     token: null as string | null
