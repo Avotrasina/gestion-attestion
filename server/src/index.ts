@@ -1,4 +1,6 @@
 import express from "express";
+import cors from "cors";
+
 import personneRouter from "./routes/personne.route";
 import fonctionRouter from "./routes/fonction.route";
 import uniteRouter from "./routes/unite.route";
@@ -8,6 +10,8 @@ import authRouter from "./routes/auth.route";
 import { authenticate } from "./middlewares/auth.middleware";
 import { auditRequest } from "./middlewares/audit.middleware";
 const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 
