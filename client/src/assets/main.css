@@ -1,1 +1,21 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/inter/800.css";
 @import "tailwindcss";
+
+@theme {
+	--color-cem-red: #e30613;
+	--color-cem-dark: #2d2d2d;
+	--color-cem-light: #f6f6f8;
+	--font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+	font-family: "Inter", system-ui, sans-serif;
+}
+
+
+
+
